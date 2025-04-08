@@ -1,19 +1,20 @@
 use alloy::{
+    consensus::BlockHeader,
     contract::{ContractInstance, Interface},
     dyn_abi::DynSolValue,
-    eips::{BlockId, BlockNumberOrTag},
+    eips::BlockNumberOrTag,
     network::Ethereum,
     primitives::{Address, Bytes},
     providers::{Provider, RootProvider},
-    rpc::types::{Block, BlockTransactionsKind},
+    rpc::types::Block,
     signers::local::PrivateKeySigner,
 };
 
 use eyre::{anyhow, Result};
 use serde_json::Value;
 
-fn fetch_pk() -> Option<PrivateKeySigner> {
-    None
+fn fetch_pk() -> Result<PrivateKeySigner> {
+    todo!("fetch_pk");
 }
 
 fn sol_value_to_string(val: &DynSolValue) -> String {
@@ -61,7 +62,7 @@ pub async fn sample_historical_data<T: Provider>(
     function_name: String,
     args: &[DynSolValue],
     start_block: u64,
-    end_block: u64,
+    end_block: BlockNumberOrTag,
     interval: u64,
     ignore_reverts: bool,
 ) -> Result<Vec<(u64, Vec<DynSolValue>)>> {
@@ -70,9 +71,23 @@ pub async fn sample_historical_data<T: Provider>(
 
     let provider = contract.provider();
 
+    let true_end_block = match end_block {
+        BlockNumberOrTag::Latest => {
+            let latest_block = provider
+                .get_block_by_number(BlockNumberOrTag::Latest)
+                .await?
+                .expect("No Latest Block!");
+            latest_block.header.number()
+        }
+        BlockNumberOrTag::Number(n) => n,
+        _ => {
+            return Err(anyhow!("Only Latest Block or specific block number"));
+        }
+    };
+
     let mut code = Bytes::default();
 
-    for n in 0..(end_block - start_block) / interval {
+    for n in 0..(true_end_block - start_block) / interval {
         if code.is_empty() {
             code = provider
                 .get_code_at(*contract.address())

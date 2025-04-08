@@ -1,15 +1,17 @@
-use std::io::Write;
-
-use alloy::primitives::address;
-use alloy::sol;
-use alloy::transports::http::reqwest::Url;
-
-use alloy::providers::{ProviderBuilder, RootProvider};
+use alloy::{
+    eips::BlockNumberOrTag,
+    primitives::address,
+    providers::{ProviderBuilder, RootProvider},
+    sol,
+    transports::http::reqwest::Url,
+};
 use dotenv::dotenv;
 use eyre::Result;
 use samples::utils::{
     generate_csv_from_timestamped_data, get_contract_from_abi, sample_historical_data,
 };
+use std::io::Write;
+
 mod samples;
 
 // Getting contract with sol macro (not currently in use)
@@ -22,7 +24,6 @@ sol!(
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenv().ok();
-    println!("Hello, world!");
     // Set up the HTTP transport which is consumed by the RPC client.
     let rpc_url: Url = std::env::var("RPC_URL")?.parse()?;
 
@@ -35,7 +36,7 @@ async fn main() -> Result<()> {
         "totalAssetsSync".into(),
         &[],
         28000519,
-        28473032,
+        BlockNumberOrTag::Latest,
         2500,
         true,
     )
